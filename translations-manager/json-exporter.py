@@ -1,7 +1,7 @@
 import json
 
-input_file_path = 'pm00_01.txt.scn.m.json'
-output_file_path = 'extracted.json'
+input_file_path = 'pm01_02.txt.scn.m.json'
+output_file_path = 'extracted-02.json'
 simplified = False
 
 
@@ -26,53 +26,55 @@ global_labels.extend(
 
 
 """
-Get texts and details from the scenes
+Get texts and details from the Default type scenes
 
 Note: scene objects has the following format:
 
+# type 1: default scenes
 scenes: [
   {
     label: '',
     texts: [
       [
-        'Tsukasa',        # t[0]: character name
-        null,
-        'Good morning!'   # t[2]: text/dialog
+        'Eru',           # t[0]: character name
+        'Girl',          # t[1]: apparently the temporary name before revealing the character name
+        'Good morning!'  # t[2]: text/dialog
       ]
     ]
   }
 ]
 """
-texts = {}
-for s in data['scenes']:
-  # ignore if no texts key in scenes
-  if 'texts' not in s:
-    continue
+def getDefaultScenesTexts(scene):
+  texts = {}
+  scene_label = scene['label'].strip('*')
+  scene_title = scene['title']
 
-  scene_label = s['label'].strip('*')
-  scene_title = s['title']
-
-  # group texts by scene label
-  texts[scene_label] = {}
-
-  for i in range(len(s['texts'])):
-    t = s['texts'][i]
+  for i in range(len(scene['texts'])):
+    text_group = scene['texts'][i]
 
     # format number with leading zero
     identifier = f'{file_title}-{scene_label}.{i:02d}'
 
     # voice-off when no character available
-    character = t[0] if t[0] is not None else 'voice-off'
+    character = text_group[0] if text_group[0] is not None else 'voice-off'
+
+    # checks if temporary name is present (the name before the)
+    # e.g: Eru is not revealed as 'Eru', but as 'Girl' when Tsukasa meets her
+    before_revealing_name = text_group[1] if text_group[1] is not None else None
 
     labels = [
       character,
+      'scene-type:default',
       'scene-label:{}'.format(scene_label),
       'scene-title:{}'.format(scene_title),
     ]
 
-    texts[scene_label][identifier] = {
+    if before_revealing_name is not None:
+      labels.append('before-revealing-name:{}'.format(before_revealing_name))
+
+    texts[identifier] = {
       'character': character,
-      'text': t[2],
+      'text': text_group[2],
       'translations': {},
     }
 
@@ -82,7 +84,88 @@ for s in data['scenes']:
         'context': {},
         'labels': labels + global_labels
       }
-      texts[scene_label][identifier] = {**texts[scene_label][identifier], **extend}
+      texts[identifier] = {**texts[identifier], **extend}
+
+  return texts
+
+
+"""
+Get texts and details from the Selection type scenes
+
+Note: scene objects has the following format:
+
+# type 2: selection scenes
+scenes: [
+  {
+    label: '',
+    selects: {
+      0: {
+        target: ''  # target scene label (optional)
+        text: ''
+      },
+      1: {
+        target: ''  # target scene label (optional)
+        text: ''
+      },
+    }
+  }
+]
+"""
+def getSelectionScenesTexts(scene):
+  texts = {}
+  scene_label = scene['label'].strip('*')
+  scene_title = scene['title']
+
+  for i in range(len(scene['selects'])):
+    text_group = scene['selects'][i]
+
+    # format number with leading zero
+    identifier = f'{file_title}-{scene_label}.{i:02d}'
+
+    # scene target
+    scene_target = text_group['target'].strip('*') if 'target' in text_group else 'none'
+
+    labels = [
+      'scene-type:selection',
+      'scene-label:{}'.format(scene_label),
+      'scene-title:{}'.format(scene_title),
+      'scene-target:{}'.format(scene_target),
+    ]
+
+    texts[identifier] = {
+      'text': text_group['text'],
+      'translations': {},
+    }
+
+    # Exclude context properties in simplified format
+    if not simplified:
+      extend = {
+        'context': {},
+        'labels': labels + global_labels
+      }
+      texts[identifier] = {**texts[identifier], **extend}
+
+  return texts
+
+
+"""
+Get texts and details from the scenes
+"""
+texts = {}
+for s in data['scenes']:
+  # group texts by scene label
+  scene_label = s['label'].strip('*')
+
+  # type 1: default scenes
+  if 'texts' in s:
+    texts[scene_label] = getDefaultScenesTexts(s)
+
+  # type 2: selection scenes
+  if 'selects' in s:
+    texts[scene_label] = getSelectionScenesTexts(s)
+
+
+
 
 # Generate the translation file to export
 extracted_translations = {
