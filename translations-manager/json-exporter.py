@@ -2,6 +2,7 @@ import json
 
 input_file_path = 'pm00_01.txt.scn.m.json'
 output_file_path = 'extracted.json'
+simplified = False
 
 
 # Open the json file
@@ -27,11 +28,11 @@ global_labels.extend(
 """
 Get texts and details from the scenes
 
-Note: scenes object has the following format:
+Note: scene objects has the following format:
 
 scenes: [
   {
-    label: ''
+    label: '',
     texts: [
       [
         'Tsukasa',        # t[0]: character name
@@ -44,7 +45,7 @@ scenes: [
 """
 texts = {}
 for s in data['scenes']:
-  # ignore if no texts in scenes
+  # ignore if no texts key in scenes
   if 'texts' not in s:
     continue
 
@@ -59,27 +60,44 @@ for s in data['scenes']:
 
     # format number with leading zero
     identifier = f'{file_title}-{scene_label}.{i:02d}'
+
+    # voice-off when no character available
+    character = t[0] if t[0] is not None else 'voice-off'
+
     labels = [
+      character,
       'scene-label:{}'.format(scene_label),
       'scene-title:{}'.format(scene_title),
-      t[0] if t[0] is not None else 'voice-off'     # voice-off when no character available
     ]
 
     texts[scene_label][identifier] = {
+      'character': character,
       'text': t[2],
-      'labels': global_labels + labels
+      'translations': {},
     }
 
+    # Exclude context properties in simplified format
+    if not simplified:
+      extend = {
+        'context': {},
+        'labels': labels + global_labels
+      }
+      texts[scene_label][identifier] = {**texts[scene_label][identifier], **extend}
 
 # Generate the translation file to export
 extracted_translations = {
-  'filename': filename,
-  'labels': global_labels,
   'texts': texts
 }
 
+# Exclude context properties in simplified format
+if not simplified:
+  extend = {
+    'filename': filename,
+    'labels': global_labels,
+  }
+  extracted_translations = {**extend, **extracted_translations}
 
-# Save the outputfile
+# Save the output file
 # print(json.dumps(extracted_translations, ensure_ascii=False, indent = 2))
 with open(output_file_path, 'wb') as fp:
   fp.write(json.dumps(extracted_translations, ensure_ascii=False, indent = 2).encode("utf8"))
