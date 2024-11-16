@@ -1,7 +1,7 @@
 import json
 
-input_file_path = 'pm01_02.txt.scn.m.json'
-output_file_path = 'extracted-02.json'
+input_file_path = 'pm00_01.txt.scn.m.json'
+output_file_path = 'extracted-00.json'
 simplified = False
 
 
@@ -80,9 +80,14 @@ def getDefaultScenesTexts(scene):
 
     # Exclude context properties in simplified format
     if not simplified:
+      context = 'jap context'
+      custom_data = 'character: {}'.format(character)
+
       extend = {
-        'context': {},
-        'labels': labels + global_labels
+        'isHidden': False,
+        'context': context,
+        'labels': labels + global_labels,
+        'customData': custom_data
       }
       texts[identifier] = {**texts[identifier], **extend}
 
@@ -139,9 +144,14 @@ def getSelectionScenesTexts(scene):
 
     # Exclude context properties in simplified format
     if not simplified:
+      context = 'jap context'
+      custom_data = 'character: {}'.format('pending')
+
       extend = {
-        'context': {},
-        'labels': labels + global_labels
+        'isHidden': False,
+        'context': context,
+        'labels': labels + global_labels,
+        'customData': custom_data
       }
       texts[identifier] = {**texts[identifier], **extend}
 
