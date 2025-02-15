@@ -21,7 +21,7 @@ global_labels = []
 # Generate labels
 global_labels.extend(
   [
-    'filename:{}'.format(filename)
+    'filename: {}'.format(filename)
   ]
 )
 
@@ -64,8 +64,8 @@ def getDefaultScenesTexts(scene):
     before_revealing_name = text_group[1] if text_group[1] is not None else None
 
     labels = [
-      character,
-      'scene-type:default',
+      'character: {}'.format(character),
+      'scene-type: default',
       'scene-label:{}'.format(scene_label),
       'scene-title:{}'.format(scene_title),
     ]
@@ -132,10 +132,10 @@ def getSelectionScenesTexts(scene):
     scene_target = text_group['target'].strip('*') if 'target' in text_group else 'none'
 
     labels = [
-      'scene-type:selection',
-      'scene-label:{}'.format(scene_label),
-      'scene-title:{}'.format(scene_title),
-      'scene-target:{}'.format(scene_target),
+      'scene-type: selection',
+      'scene-label: {}'.format(scene_label),
+      'scene-title: {}'.format(scene_title),
+      'scene-target: {}'.format(scene_target),
     ]
 
     texts[identifier] = {
