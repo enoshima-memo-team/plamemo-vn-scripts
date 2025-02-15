@@ -1,5 +1,6 @@
 import json
 
+input_base_file_path = '~/games/plamemo/tools/FreeMoteToolkit-v4.0.0/unpack/scenario/pm00_01.txt.json'
 input_file_path = 'pm00_01.txt.scn.m.json'
 output_file_path = 'extracted-00.json'
 simplified = False
