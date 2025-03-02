@@ -1,7 +1,65 @@
 import json
+import tkinter as tk
+from tkinter import filedialog, messagebox
+import re
+from typing import Optional
 
 
-def load_data(input_file_path):
+class SceneMismatchError(Exception):
+    """Exception raised for mismatched scenes in input files."""
+
+    pass
+
+
+def input_file_selector(language: str = None) -> str:
+    """
+    Opens a file dialog to select a file and returns the selected file path.
+    """
+    root = tk.Tk()
+    root.withdraw()  # Hide the root window
+    file_path = filedialog.askopenfilename(
+        title=(
+            f"Select the {language.upper()} JSON file"
+            if language
+            else "Select a JSON file"
+        ),
+        filetypes=(("JSON files", "*.json"), ("All files", "*.*")),
+    )
+    return file_path
+
+
+def output_file_namer(input_file_path_en: str, input_file_path_jp: str) -> str:
+    """
+    Generates the output file name based on the input file names.
+    If the input files are from the same scene, in `'pm<scene_id>.txt.scn.m.json'` format, the output file name will be `'extracted<scene_id>.json'`.
+    - It can recognize if the input files are from different scenes to say ERROR.
+    - Otherwise, if the input files don't match the filename format, it will open a file dialog to save the file with a custom title.
+    """
+    pattern = r"pm(\d{2}_\d{2})\.txt\.scn\.m\.json"
+    match_en = re.search(pattern, input_file_path_en)
+    match_jp = re.search(pattern, input_file_path_jp)
+
+    if match_en and match_jp:
+        if match_en.group(1) == match_jp.group(1):
+            default_filename = f"extracted{match_en.group(1)}.json"
+        else:
+            raise SceneMismatchError("The selected files are from different scenes.")
+    elif match_en:
+        default_filename = f"extracted{match_en.group(1)}.json"
+    elif match_jp:
+        default_filename = f"extracted{match_jp.group(1)}.json"
+    else:
+        default_filename = "extracted.json"
+
+    return filedialog.asksaveasfilename(
+        title="Save file as",
+        defaultextension=".json",
+        initialfile=default_filename,
+        filetypes=(("JSON files", "*.json"), ("All files", "*.*")),
+    )
+
+
+def load_data(input_file_path: str) -> dict:
     """
     Loads the JSON file from the specified path.
     """
@@ -9,7 +67,9 @@ def load_data(input_file_path):
         return json.load(f)
 
 
-def getDefaultScenesTexts(scene, file_title, global_labels, simplified):
+def getDefaultScenesTexts(
+    scene: dict, file_title: str, global_labels: list, simplified: bool
+) -> dict:
     """
     Get texts and details from the Default type scenes
 
@@ -50,8 +110,8 @@ def getDefaultScenesTexts(scene, file_title, global_labels, simplified):
         labels = [
             "character: {}".format(character),
             "scene-type: default",
-            "scene-label:{}".format(scene_label),
-            "scene-title:{}".format(scene_title),
+            "scene-label: {}".format(scene_label),
+            "scene-title: {}".format(scene_title),
         ]
 
         if before_revealing_name is not None:
@@ -79,7 +139,9 @@ def getDefaultScenesTexts(scene, file_title, global_labels, simplified):
     return texts
 
 
-def getSelectionScenesTexts(scene, file_title, global_labels, simplified):
+def getSelectionScenesTexts(
+    scene: dict, file_title: str, global_labels: list, simplified: bool
+) -> dict:
     """
     Get texts and details from the Selection type scenes
 
@@ -146,7 +208,7 @@ def getSelectionScenesTexts(scene, file_title, global_labels, simplified):
     return texts
 
 
-def extract_translations(data, simplified=False):
+def extract_translations(data: dict, simplified=False) -> dict:
     """
     Processes the loaded JSON and extracts translations organized by scenes.
     """
@@ -182,7 +244,7 @@ def extract_translations(data, simplified=False):
     return extracted_translations
 
 
-def translations_merger(translations_en, translations_jp):
+def translations_merger(translations_en: dict, translations_jp: dict) -> dict:
     """
     Merges Japanese translations into the English translations.
     Adds an empty Spanish translation with status 'untranslated'.
@@ -205,7 +267,9 @@ def translations_merger(translations_en, translations_jp):
     return translations_en
 
 
-def save_extracted_translations(extracted_translations, output_file_path):
+def save_extracted_translations(
+    extracted_translations: dict, output_file_path: str
+) -> None:
     """
     Saves the extracted translations dictionary to a JSON file.
     """
@@ -220,25 +284,42 @@ def save_extracted_translations(extracted_translations, output_file_path):
 # ================================ MAIN ======================================
 
 
-def main(input_file_path_en, input_file_path_jp, output_file_path, simplified=False):
+def main() -> Optional[dict]:
     """
     Main function that executes the loading, extraction, and saving of translations.
     """
-    data_en = load_data(input_file_path_en)
-    data_jp = load_data(input_file_path_jp)
-    extracted_translations_en = extract_translations(data_en, simplified)
-    extracted_translations_jp = extract_translations(data_jp, simplified)
-    extracted_translations_merged = translations_merger(
-        extracted_translations_en, extracted_translations_jp
-    )
-    save_extracted_translations(extracted_translations_merged, output_file_path)
-    return extracted_translations_en
+    try:
+        input_file_path_en = input_file_selector("english")
+        input_file_path_jp = input_file_selector("japanese")
+        output_file_path = output_file_namer(input_file_path_en, input_file_path_jp)
+
+        if not output_file_path:
+            return None
+
+        simplified = False
+
+        data_en = load_data(input_file_path_en)
+        data_jp = load_data(input_file_path_jp)
+        extracted_translations_en = extract_translations(data_en, simplified)
+        extracted_translations_jp = extract_translations(data_jp, simplified)
+        extracted_translations_merged = translations_merger(
+            extracted_translations_en, extracted_translations_jp
+        )
+        save_extracted_translations(extracted_translations_merged, output_file_path)
+        messagebox.showinfo(
+            "Success",
+            f"Translations extracted successfully.\nSaved in {output_file_path}",
+        )
+        return extracted_translations_merged
+
+    except SceneMismatchError as e:
+        messagebox.showerror("Error", str(e))
+        return None
+
+    except Exception as e:
+        messagebox.showerror("Error", str(e))
+        return None
 
 
 if __name__ == "__main__":
-    # Example paths; can be modified as needed
-    input_file_path_en = "inputs/en/pm00_01.txt.scn.m.json"
-    input_file_path_jp = "inputs/jp/pm00_01.txt.scn.m.json"
-    output_file_path = "output/extracted00-01.json"
-    simplified = False
-    main(input_file_path_en, input_file_path_jp, output_file_path, simplified)
+    main()
