@@ -1,0 +1,15 @@
+# this is to refactor the code to black style always before commit.
+
+# to use, run:
+# pip install pre-commit
+# pre-commit install
+
+# and that's it!
+# PD: you can also refactor manually by running: 
+# black .
+# (of course, after installing black with: pip install black)
+repos:
+  - repo: https://github.com/psf/black
+    rev: 23.1.0
+    hooks:
+      - id: black
