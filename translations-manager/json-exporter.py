@@ -148,7 +148,7 @@ def getSelectionScenesTexts(scene, file_title, global_labels, simplified):
 
 def extract_translations(data, simplified=False):
     """
-    Procesa el JSON cargado y extrae las traducciones organizadas por escenas.
+    Processes the loaded JSON and extracts translations organized by scenes.
     """
     # Common data
     filename = data["name"]
@@ -182,6 +182,29 @@ def extract_translations(data, simplified=False):
     return extracted_translations
 
 
+def translations_merger(translations_en, translations_jp):
+    """
+    Merges Japanese translations into the English translations.
+    Adds an empty Spanish translation with status 'untranslated'.
+    """
+    for scene_label, scene_texts in translations_en["texts"].items():
+        for identifier, text_data in scene_texts.items():
+            # Add Japanese translation
+            jp_text = (
+                translations_jp["texts"]
+                .get(scene_label, {})
+                .get(identifier, {})
+                .get("text", "")
+            )
+            text_data["translations"]["jp-JP"] = {"text": jp_text, "status": "approved"}
+            # Add empty Spanish translation
+            text_data["translations"]["es-ES"] = {"text": "", "status": "untranslated"}
+            # Add Japanese context
+            text_data["context"] = "Original Text: " + jp_text
+
+    return translations_en
+
+
 def save_extracted_translations(extracted_translations, output_file_path):
     """
     Saves the extracted translations dictionary to a JSON file.
@@ -194,19 +217,28 @@ def save_extracted_translations(extracted_translations, output_file_path):
         )
 
 
-def main(input_file_path, output_file_path, simplified=False):
+# ================================ MAIN ======================================
+
+
+def main(input_file_path_en, input_file_path_jp, output_file_path, simplified=False):
     """
     Main function that executes the loading, extraction, and saving of translations.
     """
-    data = load_data(input_file_path)
-    extracted_translations = extract_translations(data, simplified)
-    save_extracted_translations(extracted_translations, output_file_path)
-    return extracted_translations
+    data_en = load_data(input_file_path_en)
+    data_jp = load_data(input_file_path_jp)
+    extracted_translations_en = extract_translations(data_en, simplified)
+    extracted_translations_jp = extract_translations(data_jp, simplified)
+    extracted_translations_merged = translations_merger(
+        extracted_translations_en, extracted_translations_jp
+    )
+    save_extracted_translations(extracted_translations_merged, output_file_path)
+    return extracted_translations_en
 
 
 if __name__ == "__main__":
     # Example paths; can be modified as needed
-    input_file_path = "inputs/en/pm00_01.txt.scn.m.json"
-    output_file_path = "output/extracted-00.json"
+    input_file_path_en = "inputs/en/pm00_01.txt.scn.m.json"
+    input_file_path_jp = "inputs/jp/pm00_01.txt.scn.m.json"
+    output_file_path = "output/extracted00-01.json"
     simplified = False
-    main(input_file_path, output_file_path, simplified)
+    main(input_file_path_en, input_file_path_jp, output_file_path, simplified)
