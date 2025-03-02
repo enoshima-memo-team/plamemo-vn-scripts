@@ -1,3 +1,14 @@
+# Made for ENOSHIMA MEMO TEAM. https://github.com/enoshima-memo-team
+# By:
+# - QuitoTactico - https://github.com/QuitoTactico
+# - DvDantunes   - https://github.com/dvdantunes
+
+# This script extracts translations from JSON files exported from the game engine.
+# It extracts the English and Japanese translations and merges them into a single JSON file.
+# The output file contains the English and Japanese translations, with an empty Spanish translation, ready for use on the CROWDIN platform.
+
+# For any questions, visit https://github.com/enoshima-memo-team/plamemo-vn-scripts/blob/develop/README.md#contact-us
+
 import json
 import tkinter as tk
 from tkinter import filedialog, messagebox
@@ -323,3 +334,30 @@ def main() -> Optional[dict]:
 
 if __name__ == "__main__":
     main()
+
+#               ?#########G5###5###########J77G#################PB###########~
+#             :G&BB#####BB7BB#BG##########5!?G#######P###########5#####BB###&5
+#            7##GG######Y?~PY#BB#########B7?B###BB##BB###########GG#####G###&!
+#          .P#BG#######B!!~?7G#B#########Y?B###GJ##5B############BG##B##B####.
+#         7##B#########J!7!7!?PB########B?B###G?GB5JP###B########BB##B######5
+#       .5#B#######B##Y7!77!!7!B########5B##BP55GG&PYB#BB########PP##BB#P##&~
+#      ~GBB#######PB#Y77!777!?JG########B##BB#PB&@@BJPBB#GB####B#B5G#BB#G##B
+#     ?GB########GB#Y777!7777B#B#########BPGP7YPGG##YJP#P?####B&&&B5#BBGB#&J
+#   :5B########BB##J777!7777?&&B#######B5!!JJ~.^#G7?BYG5!5####&&&&@YBBGG###:
+#  ~B########BPB#B?7777!77777&&G####P##BP#J?7?!J@@@#GPY!?B##5Y!?P7PP5GGG##B
+#:5#########PJG#G77777777777!Y&G####5G#5&@G555B@@@@##&GJB#&5Y?^B@P^7?BBG##5
+##########BY7PBG777777777777!!J5##PBB?#5&&&&&&@@&&&&&&BB&&&7JB&@@G!?B#PB#&7
+#########P775PG7777777777777!77?##YY#555B@&&&&&&&&&&&&&&&&&##&@@#?5##BJ###:
+#######BJ77YPP?777777777777!7777##J!5G55J&&&&&&&&&&&&&&&&&&&&&&&5YG##PJ##B
+######5777?G5?777777777777!!777!B#?7~BP###&&&&&&&&&&&&&&&&&&&#GJ?7B##?J##P
+####G?7777GG?7777777!777?JJYJ777GB77~PY5#&&&&&&&&&&&&&&&&&@&#5777?##B.7#&J
+##BY77777JG?77777!77JPBB#@@@&#5?5B77!YY?J5B&&@&&&&&&&&&&&&BP#P!77Y#&Y .B&J
+# P?777777YJ77!!?5G#&&@@@&&@@@@&BPG7!!YJJJJJYPB#&&@&&&&&#&&BY#G!77P#B!  7&Y
+# 77777777777!P#&@@&&&&&&&&&@@@@&#P7!7Y7?JJJJJJJY5GG5P&&&&&@#PG777BBP:   7B
+# 77777777!7!#@&&&&&&&&&&&&&@@@@&&P7!7J!JJJJJJJJJJY5P#@&&&&&#PP77J#75     ^~
+# 7777777!77B@&&&&&&&&&&&&&&@@@@&&B7!GBJJJJJJJJJJJYP#&&&&&&&G#Y77PJ^!
+# 7777777~7P@&&&&&&&&&&&&&&&&@@@@B#7!G&&GYJJJJJJJJJ&&&&&&&&P?#?7?Y !
+# 777777!!?&&&&&&&&&&&&&&&&&&@@@@#&B~G&&&#G5JJJJJJG@#B5&@&57?P77Y7 :   ENOSHIMA
+# 777777~!G@&&&&&&&&&&&&&&&&&@@@@B&@5G@&&&&&&BP555&&JJB@&J7777!7BP.      MEMO
+# 777777~?&&&&&&&&&&&&&&&&&&&@@@@B&&&&&&&&&&&@@@&5&PY#@#?~77~~?B&G       TEAM
+# 77777!~5@&&&&&&&&&&&&&&&P&&@@@@B&&&&&&&&&&&&#GYJ5?5@#77~~!^~G###~
