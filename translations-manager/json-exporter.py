@@ -265,15 +265,28 @@ def translations_merger(translations_en: dict, translations_jp: dict) -> dict:
     for scene_label, scene_texts in translations_en["texts"].items():
         for identifier, text_data in scene_texts.items():
             try:
-                # Try to add Japanese translation
+                # Try to add Japanese translation. So get both translations.
                 jp_text = (
                     translations_jp["texts"]
                     .get(scene_label, {})
                     .get(identifier, {})
                     .get("text", "")
                 )
-                text_data["translations"]["jp-JP"] = {
+                en_text = (
+                    translations_en["texts"]
+                    .get(scene_label, {})
+                    .get(identifier, {})
+                    .get("text", "")
+                )
+
+                # Add japanese source
+                text_data["translations"]["ja-JP"] = {
                     "text": jp_text,
+                    "status": "approved",
+                }
+                # And the english translation
+                text_data["translations"]["en-US"] = {
+                    "text": en_text,
                     "status": "approved",
                 }
                 # Add empty Spanish translation
@@ -285,8 +298,13 @@ def translations_merger(translations_en: dict, translations_jp: dict) -> dict:
                 text_data["context"] = "Original Text: " + jp_text
             except:
                 # If there's no Japanese translation (because it's original content, for example), add a message to the context
-                text_data["translations"]["jp-JP"] = {
+                text_data["translations"]["ja-JP"] = {
                     "text": "(Original content of the english version, there's no japanese source).",
+                    "status": "approved",
+                }
+                # And the english version
+                text_data["translations"]["en-US"] = {
+                    "text": en_text,
                     "status": "approved",
                 }
                 # Add empty Spanish translation
@@ -325,11 +343,16 @@ def main() -> Optional[dict]:
     """
     try:
         input_file_path_en = input_file_selector("english")
-        input_file_path_jp = input_file_selector("japanese")
-        output_file_path = output_file_namer(input_file_path_en, input_file_path_jp)
+        if not input_file_path_en:
+            raise SceneMismatchError("You need to select an english file.")
 
+        input_file_path_jp = input_file_selector("japanese")
+        if not input_file_path_jp:
+            raise SceneMismatchError("You need to select a japanese file.")
+
+        output_file_path = output_file_namer(input_file_path_en, input_file_path_jp)
         if not output_file_path:
-            return None
+            raise SceneMismatchError("You need to select an output file name.")
 
         simplified = False
 
