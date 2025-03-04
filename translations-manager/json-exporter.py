@@ -39,7 +39,9 @@ def input_file_selector(language: str = None) -> str:
     return file_path
 
 
-def output_file_namer(input_file_path_en: str, input_file_path_jp: str) -> str:
+def output_file_namer(
+    input_file_path_en: str, input_file_path_jp: str
+) -> Optional[str]:
     """
     Generates the output file name based on the input file names.
     If the input files are from the same scene, in `'pm<scene_id>.txt.scn.m.json'` format, the output file name will be `'extracted<scene_id>.json'`.
@@ -119,10 +121,10 @@ def getDefaultScenesTexts(
         before_revealing_name = text_group[1] if text_group[1] is not None else None
 
         labels = [
-            "character: {}".format(character),
-            "scene-type: default",
-            "scene-label: {}".format(scene_label),
-            "scene-title: {}".format(scene_title),
+            "character:{}".format(character),
+            "scene-type:default",
+            "scene-label:{}".format(scene_label),
+            "scene-title:{}".format(scene_title),
         ]
 
         if before_revealing_name is not None:
@@ -137,7 +139,7 @@ def getDefaultScenesTexts(
         # Exclude context properties in simplified format
         if not simplified:
             context = "jap context"
-            custom_data = "character: {}".format(character)
+            custom_data = "character:{}".format(character)
 
             extend = {
                 "isHidden": False,
@@ -192,10 +194,10 @@ def getSelectionScenesTexts(
         )
 
         labels = [
-            "scene-type: selection",
-            "scene-label: {}".format(scene_label),
-            "scene-title: {}".format(scene_title),
-            "scene-target: {}".format(scene_target),
+            "scene-type:selection",
+            "scene-label:{}".format(scene_label),
+            "scene-title:{}".format(scene_title),
+            "scene-target:{}".format(scene_target),
         ]
 
         texts[identifier] = {
@@ -206,7 +208,7 @@ def getSelectionScenesTexts(
         # Exclude context properties in simplified format
         if not simplified:
             context = "jap context"
-            custom_data = "character: {}".format("pending")
+            custom_data = "character:{}".format("pending")
 
             extend = {
                 "isHidden": False,
@@ -226,7 +228,7 @@ def extract_translations(data: dict, simplified=False) -> dict:
     # Common data
     filename = data["name"]
     file_title = filename.split(".")[0]
-    global_labels = ["filename: {}".format(filename)]
+    global_labels = ["filename:{}".format(filename)]
 
     texts = {}
     for scene in data["scenes"]:
@@ -262,18 +264,40 @@ def translations_merger(translations_en: dict, translations_jp: dict) -> dict:
     """
     for scene_label, scene_texts in translations_en["texts"].items():
         for identifier, text_data in scene_texts.items():
-            # Add Japanese translation
-            jp_text = (
-                translations_jp["texts"]
-                .get(scene_label, {})
-                .get(identifier, {})
-                .get("text", "")
-            )
-            text_data["translations"]["jp-JP"] = {"text": jp_text, "status": "approved"}
-            # Add empty Spanish translation
-            text_data["translations"]["es-ES"] = {"text": "", "status": "untranslated"}
-            # Add Japanese context
-            text_data["context"] = "Original Text: " + jp_text
+            try:
+                # Try to add Japanese translation
+                jp_text = (
+                    translations_jp["texts"]
+                    .get(scene_label, {})
+                    .get(identifier, {})
+                    .get("text", "")
+                )
+                text_data["translations"]["jp-JP"] = {
+                    "text": jp_text,
+                    "status": "approved",
+                }
+                # Add empty Spanish translation
+                text_data["translations"]["es-ES"] = {
+                    "text": "",
+                    "status": "untranslated",
+                }
+                # Add Japanese context
+                text_data["context"] = "Original Text: " + jp_text
+            except:
+                # If there's no Japanese translation (because it's original content, for example), add a message to the context
+                text_data["translations"]["jp-JP"] = {
+                    "text": "(Original content of the english version, there's no japanese source).",
+                    "status": "approved",
+                }
+                # Add empty Spanish translation
+                text_data["translations"]["es-ES"] = {
+                    "text": "",
+                    "status": "untranslated",
+                }
+                # Add Japanese context saying there's no source
+                text_data[
+                    "context"
+                ] = "Original content of the english version, there's no japanese source."
 
     return translations_en
 
