@@ -2,7 +2,7 @@
 pip install pyinstaller
 
 # Move to the folder where the json-exporter.py is located
-cd <path where json-exporter.py is located>
+cd <path_where_json-exporter.py_is_located>
 
 # Use this to generate the executable
 pyinstaller --onefile json-exporter.py

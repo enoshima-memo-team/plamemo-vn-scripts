@@ -9,11 +9,15 @@
 
 # For any questions, visit https://github.com/enoshima-memo-team/plamemo-vn-scripts/blob/develop/README.md#contact-us
 
-import json
+import re, json, os
+from typing import Optional
+
 import tkinter as tk
 from tkinter import filedialog, messagebox
-import re
-from typing import Optional
+
+ENGLISH_TAG = "en"
+JAPANESE_TAG = "jp"
+SPANISH_TAG = "es-ES"
 
 
 class SceneMismatchError(Exception):
@@ -22,6 +26,10 @@ class SceneMismatchError(Exception):
     pass
 
 
+# ============================== DEPRECATED =============================
+
+
+@DeprecationWarning
 def input_file_selector(language: str = None) -> str:
     """
     Opens a file dialog to select a file and returns the selected file path.
@@ -39,6 +47,7 @@ def input_file_selector(language: str = None) -> str:
     return file_path
 
 
+@DeprecationWarning
 def output_file_namer(
     input_file_path_en: str, input_file_path_jp: str
 ) -> Optional[str]:
@@ -72,12 +81,92 @@ def output_file_namer(
     )
 
 
+# ============================== UTIL ====================================
+
+
+def input_folder_selector(language: str = None) -> str:
+    """
+    Opens a folder dialog to select a folder and returns the selected folder path.
+    """
+    root = tk.Tk()
+    root.withdraw()  # Hide the root window
+    folder_path = filedialog.askdirectory(
+        title=(
+            f"Select the folder containing {language.upper()} JSON files"
+            if language
+            else "Select a folder"
+        )
+    )
+    return folder_path
+
+
+def output_folder_selector() -> str:
+    """
+    Opens a folder dialog to select a folder for saving output files.
+    Returns the selected folder path.
+    """
+    root = tk.Tk()
+    root.withdraw()  # Hide the root window
+    folder_path = filedialog.askdirectory(
+        title="Select the folder to save output files"
+    )
+    return folder_path
+
+
+def get_file_pairs(folder_en: str, folder_jp: str) -> list[dict]:
+    """
+    Matches files with the same name in the English and Japanese folders.
+    Returns a list of dictionaries with matched file paths.
+    Files without a match will still be included with a None value for the missing counterpart.
+    """
+    files_en = {f for f in os.listdir(folder_en) if f.endswith(".json")}
+    files_jp = {f for f in os.listdir(folder_jp) if f.endswith(".json")}
+
+    all_files = files_en | files_jp  # Union of all filenames
+    file_pairs = []
+
+    for file_name in all_files:
+        file_pairs.append(
+            {
+                ENGLISH_TAG: (
+                    os.path.join(folder_en, file_name)
+                    if file_name in files_en
+                    else None
+                ),
+                JAPANESE_TAG: (
+                    os.path.join(folder_jp, file_name)
+                    if file_name in files_jp
+                    else None
+                ),
+            }
+        )
+
+    return file_pairs
+
+
 def load_data(input_file_path: str) -> dict:
     """
     Loads the JSON file from the specified path.
     """
     with open(input_file_path, "r", encoding="utf-8") as f:
         return json.load(f)
+
+
+def save_extracted_translations(
+    extracted_translations: dict, output_file_path: str
+) -> None:
+    """
+    Saves the extracted translations dictionary to a JSON file.
+    """
+    with open(output_file_path, "wb") as fp:
+        fp.write(
+            json.dumps(extracted_translations, ensure_ascii=False, indent=2).encode(
+                "utf8"
+            )
+        )
+
+
+# ============================== MAIN FUNCTIONS ====================================
 
 
 def getDefaultScenesTexts(
@@ -280,17 +369,17 @@ def translations_merger(translations_en: dict, translations_jp: dict) -> dict:
                 )
 
                 # Add japanese source
-                text_data["translations"]["jp"] = {
+                text_data["translations"][JAPANESE_TAG] = {
                     "text": jp_text,
                     "status": "approved",
                 }
                 # And the english translation
-                text_data["translations"]["en"] = {
+                text_data["translations"][ENGLISH_TAG] = {
                     "text": en_text,
                     "status": "approved",
                 }
                 # Add empty Spanish translation
-                text_data["translations"]["es-ES"] = {
+                text_data["translations"][SPANISH_TAG] = {
                     "text": "",
                     "status": "untranslated",
                 }
@@ -298,40 +387,26 @@ def translations_merger(translations_en: dict, translations_jp: dict) -> dict:
                 text_data["context"] = "Original Text: " + jp_text
             except:
                 # If there's no Japanese translation (because it's original content, for example), add a message to the context
-                text_data["translations"]["jp"] = {
+                text_data["translations"][JAPANESE_TAG] = {
                     "text": "(Original content of the english version, there's no japanese source).",
                     "status": "approved",
                 }
                 # And the english version
-                text_data["translations"]["en"] = {
+                text_data["translations"][ENGLISH_TAG] = {
                     "text": en_text,
                     "status": "approved",
                 }
                 # Add empty Spanish translation
-                text_data["translations"]["es-ES"] = {
+                text_data["translations"][SPANISH_TAG] = {
                     "text": "",
                     "status": "untranslated",
                 }
                 # Add Japanese context saying there's no source
-                text_data[
-                    "context"
-                ] = "Original content of the english version, there's no japanese source."
+                text_data["context"] = (
+                    "Original content of the english version, there's no japanese source."
+                )
 
     return translations_en
-
-
-def save_extracted_translations(
-    extracted_translations: dict, output_file_path: str
-) -> None:
-    """
-    Saves the extracted translations dictionary to a JSON file.
-    """
-    with open(output_file_path, "wb") as fp:
-        fp.write(
-            json.dumps(extracted_translations, ensure_ascii=False, indent=2).encode(
-                "utf8"
-            )
-        )
 
 
 # ================================ MAIN ======================================
@@ -342,33 +417,53 @@ def main() -> Optional[dict]:
     Main function that executes the loading, extraction, and saving of translations.
     """
     try:
-        input_file_path_en = input_file_selector("english")
-        if not input_file_path_en:
-            raise SceneMismatchError("You need to select an english file.")
+        input_folder_path_en = input_folder_selector("english")
+        if not input_folder_path_en:
+            raise Exception("You need to select a folder for English files.")
 
-        input_file_path_jp = input_file_selector("japanese")
-        if not input_file_path_jp:
-            raise SceneMismatchError("You need to select a japanese file.")
+        print(input_folder_path_en)
 
-        output_file_path = output_file_namer(input_file_path_en, input_file_path_jp)
-        if not output_file_path:
-            raise SceneMismatchError("You need to select an output file name.")
+        input_folder_path_jp = input_folder_selector("japanese")
+        if not input_folder_path_jp:
+            raise Exception("You need to select a folder for Japanese files.")
 
-        simplified = False
+        output_folder_path = output_folder_selector()
+        if not output_folder_path:
+            raise Exception("You need to select a folder for saving output files.")
 
-        data_en = load_data(input_file_path_en)
-        data_jp = load_data(input_file_path_jp)
-        extracted_translations_en = extract_translations(data_en, simplified)
-        extracted_translations_jp = extract_translations(data_jp, simplified)
-        extracted_translations_merged = translations_merger(
-            extracted_translations_en, extracted_translations_jp
-        )
-        save_extracted_translations(extracted_translations_merged, output_file_path)
+        file_pairs = get_file_pairs(input_folder_path_en, input_folder_path_jp)
+        if not file_pairs:
+            raise SceneMismatchError("No matching files found in the selected folders.")
+
+        for file_pair in file_pairs:
+            input_file_path_en = file_pair.get("english")
+            input_file_path_jp = file_pair.get("japanese")
+
+            # Generate output file name
+            output_file_name = os.path.basename(
+                input_file_path_en or input_file_path_jp
+            ).replace(".json", "_crowdin.json")
+            output_file_path = os.path.join(output_folder_path, output_file_name)
+
+            simplified = False
+
+            # Load and process data
+            data_en = load_data(input_file_path_en) if input_file_path_en else {}
+            data_jp = load_data(input_file_path_jp) if input_file_path_jp else {}
+            extracted_translations_en = extract_translations(data_en, simplified)
+            extracted_translations_jp = extract_translations(data_jp, simplified)
+            extracted_translations_merged = translations_merger(
+                extracted_translations_en, extracted_translations_jp
+            )
+
+            # Save merged translations
+            save_extracted_translations(extracted_translations_merged, output_file_path)
+
         messagebox.showinfo(
             "Success",
-            f"Translations extracted successfully.\nSaved in {output_file_path}",
+            f"Translations extracted successfully for all matched files.",
         )
-        return extracted_translations_merged
+        return None
 
     except SceneMismatchError as e:
         messagebox.showerror("Error", str(e))
