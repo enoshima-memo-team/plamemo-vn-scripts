@@ -1,7 +1,7 @@
 # Made for ENOSHIMA MEMO TEAM. https://github.com/enoshima-memo-team
 # By:
 # - QuitoTactico - https://github.com/QuitoTactico
-# - DvDantunes   - https://github.com/dvdantunes
+# - dvdantunes   - https://github.com/dvdantunes
 
 # This script extracts translations from JSON files exported from the game engine.
 # It extracts the English and Japanese translations and merges them into a single JSON file.
@@ -280,12 +280,12 @@ def translations_merger(translations_en: dict, translations_jp: dict) -> dict:
                 )
 
                 # Add japanese source
-                text_data["translations"]["ja-JP"] = {
+                text_data["translations"]["jp"] = {
                     "text": jp_text,
                     "status": "approved",
                 }
                 # And the english translation
-                text_data["translations"]["en-US"] = {
+                text_data["translations"]["en"] = {
                     "text": en_text,
                     "status": "approved",
                 }
@@ -298,12 +298,12 @@ def translations_merger(translations_en: dict, translations_jp: dict) -> dict:
                 text_data["context"] = "Original Text: " + jp_text
             except:
                 # If there's no Japanese translation (because it's original content, for example), add a message to the context
-                text_data["translations"]["ja-JP"] = {
+                text_data["translations"]["jp"] = {
                     "text": "(Original content of the english version, there's no japanese source).",
                     "status": "approved",
                 }
                 # And the english version
-                text_data["translations"]["en-US"] = {
+                text_data["translations"]["en"] = {
                     "text": en_text,
                     "status": "approved",
                 }
