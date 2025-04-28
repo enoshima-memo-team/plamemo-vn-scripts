@@ -9,7 +9,7 @@
 
 # For any questions, visit https://github.com/enoshima-memo-team/plamemo-vn-scripts/blob/develop/README.md#contact-us
 
-import re, json, os
+import re, json, os, argparse
 from typing import Optional
 
 import tkinter as tk
@@ -418,27 +418,35 @@ def translations_merger(
 # ================================ MAIN ======================================
 
 
-def main() -> Optional[dict]:
+def main(
+    input_folder_path_en=None, input_folder_path_jp=None, output_folder_path=None
+) -> Optional[dict]:
     """
     Main function that executes the loading, extraction, and saving of translations.
     """
     try:
-        input_folder_path_en = input_folder_selector("english")
+        # If folders are not provided via CLI, use folder selectors
         if not input_folder_path_en:
-            raise Exception("You need to select a folder for English files.")
+            input_folder_path_en = input_folder_selector("english")
+            if not input_folder_path_en:
+                raise Exception("You need to select a folder for English files.")
 
-        input_folder_path_jp = input_folder_selector("japanese")
         if not input_folder_path_jp:
-            raise Exception("You need to select a folder for Japanese files.")
+            input_folder_path_jp = input_folder_selector("japanese")
+            if not input_folder_path_jp:
+                raise Exception("You need to select a folder for Japanese files.")
 
-        output_folder_path = output_folder_selector()
         if not output_folder_path:
-            raise Exception("You need to select a folder for saving output files.")
+            output_folder_path = output_folder_selector()
+            if not output_folder_path:
+                raise Exception("You need to select a folder for saving output files.")
 
+        # Get file pairs
         file_pairs = get_file_pairs(input_folder_path_en, input_folder_path_jp)
         if not file_pairs:
             raise SceneMismatchError("No matching files found in the selected folders.")
 
+        # Process each file pair
         for file_pair in file_pairs:
             input_file_path_en = file_pair.get(ENGLISH_TAG)
             input_file_path_jp = file_pair.get(JAPANESE_TAG)
@@ -446,8 +454,8 @@ def main() -> Optional[dict]:
             # Generate output file name
             output_file_name = os.path.basename(
                 input_file_path_en or input_file_path_jp
-            ).replace(".txt.scn.m.json", "_crowdin.json")
-            output_file_path = os.path.join(output_folder_path, output_file_name)
+            ).replace(".txt.scn.m.json", ".txt_crowdin.json")
+            output_file_path_full = os.path.join(output_folder_path, output_file_name)
 
             simplified = False
 
@@ -474,7 +482,9 @@ def main() -> Optional[dict]:
                 )
 
             # Save merged translations
-            save_extracted_translations(extracted_translations_merged, output_file_path)
+            save_extracted_translations(
+                extracted_translations_merged, output_file_path_full
+            )
 
         messagebox.showinfo(
             "Success",
@@ -492,7 +502,40 @@ def main() -> Optional[dict]:
 
 
 if __name__ == "__main__":
-    main()
+    # Parse CLI arguments
+    parser = argparse.ArgumentParser(
+        description="Process translation files and extract translations for CROWDIN."
+    )
+    parser.add_argument(
+        "--input-folder-en",
+        type=str,
+        help="Path to the folder containing English JSON files.",
+    )
+    parser.add_argument(
+        "--input-folder-jp",
+        type=str,
+        help="Path to the folder containing Japanese JSON files.",
+    )
+    parser.add_argument(
+        "--output-folder",
+        type=str,
+        help="Path to the folder where output JSON files will be saved.",
+    )
+
+    args = parser.parse_args()
+
+    # Validate CLI arguments
+    if not args.input_folder_en and not args.input_folder_jp and not args.output_folder:
+        parser.print_help()
+        print("\nError: No valid arguments provided. Please specify at least one option.")
+        exit(1)
+
+    # Call main with CLI arguments
+    main(
+        input_folder_path_en=args.input_folder_en,
+        input_folder_path_jp=args.input_folder_jp,
+        output_folder_path=args.output_folder,
+    )
 
 #               ?#########G5###5###########J77G#################PB###########~
 #             :G&BB#####BB7BB#BG##########5!?G#######P###########5#####BB###&5

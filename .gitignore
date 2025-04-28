@@ -166,3 +166,5 @@ cython_debug/
 *.scn.m.json
 *.scn.m.resx.json
 extracted*.json
+*/inputs/
+*/output/

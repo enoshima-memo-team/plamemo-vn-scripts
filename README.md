@@ -19,7 +19,7 @@ This repo is inspired by [Python Project Boilerplate](https://github.com/keathmi
 
 ### Local usage
 
-See [Contributing](#contributing) section
+See [Contributing](#contributing) section for instructions on how to install the project locally.
 
 
 ## Contributing
