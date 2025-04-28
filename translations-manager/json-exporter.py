@@ -16,7 +16,7 @@ import tkinter as tk
 from tkinter import filedialog, messagebox
 
 ENGLISH_TAG = "en"
-JAPANESE_TAG = "jp"
+JAPANESE_TAG = "ja"
 SPANISH_TAG = "es-ES"
 
 
@@ -49,7 +49,7 @@ def input_file_selector(language: str = None) -> str:
 
 @DeprecationWarning
 def output_file_namer(
-    input_file_path_en: str, input_file_path_jp: str
+    input_file_path_en: str, input_file_path_ja: str
 ) -> Optional[str]:
     """
     Generates the output file name based on the input file names.
@@ -59,17 +59,17 @@ def output_file_namer(
     """
     pattern = r"pm(\d{2}_\d{2})\.txt\.scn\.m\.json"
     match_en = re.search(pattern, input_file_path_en)
-    match_jp = re.search(pattern, input_file_path_jp)
+    match_ja = re.search(pattern, input_file_path_ja)
 
-    if match_en and match_jp:
-        if match_en.group(1) == match_jp.group(1):
+    if match_en and match_ja:
+        if match_en.group(1) == match_ja.group(1):
             default_filename = f"extracted{match_en.group(1)}.json"
         else:
             raise SceneMismatchError("The selected files are from different scenes.")
     elif match_en:
         default_filename = f"extracted{match_en.group(1)}.json"
-    elif match_jp:
-        default_filename = f"extracted{match_jp.group(1)}.json"
+    elif match_ja:
+        default_filename = f"extracted{match_ja.group(1)}.json"
     else:
         default_filename = "extracted.json"
 
@@ -113,16 +113,16 @@ def output_folder_selector() -> str:
     return folder_path
 
 
-def get_file_pairs(folder_en: str, folder_jp: str) -> list[dict]:
+def get_file_pairs(folder_en: str, folder_ja: str) -> list[dict]:
     """
     Matches files with the same name in the English and Japanese folders.
     Returns a list of dictionaries with matched file paths.
     Files without a match will still be included with a None value for the missing counterpart.
     """
     files_en = {f for f in os.listdir(folder_en) if f.endswith(".json")}
-    files_jp = {f for f in os.listdir(folder_jp) if f.endswith(".json")}
+    files_ja = {f for f in os.listdir(folder_ja) if f.endswith(".json")}
 
-    all_files = files_en | files_jp  # Union of all filenames
+    all_files = files_en | files_ja  # Union of all filenames
     file_pairs = []
 
     for file_name in all_files:
@@ -134,8 +134,8 @@ def get_file_pairs(folder_en: str, folder_jp: str) -> list[dict]:
                     else None
                 ),
                 JAPANESE_TAG: (
-                    os.path.join(folder_jp, file_name)
-                    if file_name in files_jp
+                    os.path.join(folder_ja, file_name)
+                    if file_name in files_ja
                     else None
                 ),
             }
@@ -227,7 +227,7 @@ def getDefaultScenesTexts(
 
         # Exclude context properties in simplified format
         if not simplified:
-            context = "jap context"
+            context = "japanese context"
             custom_data = "character:{}".format(character)
 
             extend = {
@@ -347,7 +347,7 @@ def extract_translations(data: dict, simplified=False) -> dict:
 
 
 def translations_merger(
-    translations_en: dict | None, translations_jp: dict | None
+    translations_en: dict | None, translations_ja: dict | None
 ) -> dict:
     """
     Merges Japanese translations into the English translations.
@@ -359,38 +359,38 @@ def translations_merger(
 
     # Get the scenes from both translations, defaulting to empty dicts if missing
     scenes_en = translations_en.get("texts", {}) if translations_en else {}
-    scenes_jp = translations_jp.get("texts", {}) if translations_jp else {}
+    scenes_ja = translations_ja.get("texts", {}) if translations_ja else {}
 
     # Combine all scene labels from both translations
-    all_scene_labels = set(scenes_en.keys()) | set(scenes_jp.keys())
+    all_scene_labels = set(scenes_en.keys()) | set(scenes_ja.keys())
 
     for scene_label in all_scene_labels:
         # Get texts for the current scene from both translations
         scene_texts_en = scenes_en.get(scene_label, {})
-        scene_texts_jp = scenes_jp.get(scene_label, {})
+        scene_texts_ja = scenes_ja.get(scene_label, {})
 
         # Initialize the merged scene
         merged_scene = {}
 
         # Combine all identifiers (keys) from both translations
-        all_identifiers = set(scene_texts_en.keys()) | set(scene_texts_jp.keys())
+        all_identifiers = set(scene_texts_en.keys()) | set(scene_texts_ja.keys())
 
         for identifier in all_identifiers:
             # Get text data for the current identifier from both translations
             text_data_en = scene_texts_en.get(identifier, {})
-            text_data_jp = scene_texts_jp.get(identifier, {})
+            text_data_ja = scene_texts_ja.get(identifier, {})
 
             # Extract the English and Japanese texts (default to empty strings if missing)
             en_text = text_data_en.get("text", "(No English source available)")
-            jp_text = text_data_jp.get("text", "(No Japanese source available)")
+            ja_text = text_data_ja.get("text", "(No Japanese source available)")
 
             # Merge the translations
             merged_scene[identifier] = {
                 "text": en_text,  # Use English text as the base
                 "translations": {
                     JAPANESE_TAG: {
-                        "text": jp_text,
-                        "status": "approved" if jp_text else "untranslated",
+                        "text": ja_text,
+                        "status": "approved" if ja_text else "untranslated",
                     },
                     ENGLISH_TAG: {
                         "text": en_text,
@@ -403,8 +403,8 @@ def translations_merger(
                 },
                 # Add context if Japanese text exists, otherwise provide a default message
                 "context": (
-                    f"Original Text: {jp_text}"
-                    if jp_text
+                    f"Original Text: {ja_text}"
+                    if ja_text
                     else "No Japanese source available, probably it's original content."
                 ),
             }
@@ -419,7 +419,7 @@ def translations_merger(
 
 
 def main(
-    input_folder_path_en=None, input_folder_path_jp=None, output_folder_path=None
+    input_folder_path_en=None, input_folder_path_ja=None, output_folder_path=None
 ) -> Optional[dict]:
     """
     Main function that executes the loading, extraction, and saving of translations.
@@ -431,9 +431,9 @@ def main(
             if not input_folder_path_en:
                 raise Exception("You need to select a folder for English files.")
 
-        if not input_folder_path_jp:
-            input_folder_path_jp = input_folder_selector("japanese")
-            if not input_folder_path_jp:
+        if not input_folder_path_ja:
+            input_folder_path_ja = input_folder_selector("japanese")
+            if not input_folder_path_ja:
                 raise Exception("You need to select a folder for Japanese files.")
 
         if not output_folder_path:
@@ -442,39 +442,39 @@ def main(
                 raise Exception("You need to select a folder for saving output files.")
 
         # Get file pairs
-        file_pairs = get_file_pairs(input_folder_path_en, input_folder_path_jp)
+        file_pairs = get_file_pairs(input_folder_path_en, input_folder_path_ja)
         if not file_pairs:
             raise SceneMismatchError("No matching files found in the selected folders.")
 
         # Process each file pair
         for file_pair in file_pairs:
             input_file_path_en = file_pair.get(ENGLISH_TAG)
-            input_file_path_jp = file_pair.get(JAPANESE_TAG)
+            input_file_path_ja = file_pair.get(JAPANESE_TAG)
 
             # Generate output file name
             output_file_name = os.path.basename(
-                input_file_path_en or input_file_path_jp
+                input_file_path_en or input_file_path_ja
             ).replace(".txt.scn.m.json", ".txt_crowdin.json")
             output_file_path_full = os.path.join(output_folder_path, output_file_name)
 
             simplified = False
 
             # Load and process data depending on the existing files and data
-            if input_file_path_en and input_file_path_jp:
+            if input_file_path_en and input_file_path_ja:
                 data_en = load_data(input_file_path_en) if input_file_path_en else {}
-                data_jp = load_data(input_file_path_jp) if input_file_path_jp else {}
+                data_ja = load_data(input_file_path_ja) if input_file_path_ja else {}
                 extracted_translations_en = extract_translations(data_en, simplified)
-                extracted_translations_jp = extract_translations(data_jp, simplified)
+                extracted_translations_ja = extract_translations(data_ja, simplified)
                 extracted_translations_merged = translations_merger(
-                    extracted_translations_en, extracted_translations_jp
+                    extracted_translations_en, extracted_translations_ja
                 )
             elif not input_file_path_en:  # EN file doesn't exist
-                data_jp = load_data(input_file_path_jp) if input_file_path_jp else {}
-                extracted_translations_jp = extract_translations(data_jp, simplified)
+                data_ja = load_data(input_file_path_ja) if input_file_path_ja else {}
+                extracted_translations_ja = extract_translations(data_ja, simplified)
                 extracted_translations_merged = translations_merger(
-                    None, extracted_translations_jp
+                    None, extracted_translations_ja
                 )
-            elif not input_file_path_jp:  # JP file doesn't exist
+            elif not input_file_path_ja:  # ja file doesn't exist
                 data_en = load_data(input_file_path_en) if input_file_path_en else {}
                 extracted_translations_en = extract_translations(data_en, simplified)
                 extracted_translations_merged = translations_merger(
@@ -512,7 +512,7 @@ if __name__ == "__main__":
         help="Path to the folder containing English JSON files.",
     )
     parser.add_argument(
-        "--input-folder-jp",
+        "--input-folder-ja",
         type=str,
         help="Path to the folder containing Japanese JSON files.",
     )
@@ -525,7 +525,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # Validate CLI arguments
-    if not args.input_folder_en and not args.input_folder_jp and not args.output_folder:
+    if not args.input_folder_en and not args.input_folder_ja and not args.output_folder:
         parser.print_help()
         print("\nError: No valid arguments provided. Please specify at least one option.")
         exit(1)
@@ -533,7 +533,7 @@ if __name__ == "__main__":
     # Call main with CLI arguments
     main(
         input_folder_path_en=args.input_folder_en,
-        input_folder_path_jp=args.input_folder_jp,
+        input_folder_path_ja=args.input_folder_ja,
         output_folder_path=args.output_folder,
     )
 
@@ -541,10 +541,10 @@ if __name__ == "__main__":
 #             :G&BB#####BB7BB#BG##########5!?G#######P###########5#####BB###&5
 #            7##GG######Y?~PY#BB#########B7?B###BB##BB###########GG#####G###&!
 #          .P#BG#######B!!~?7G#B#########Y?B###GJ##5B############BG##B##B####.
-#         7##B#########J!7!7!?PB########B?B###G?GB5JP###B########BB##B######5
+#         7##B#########J!7!7!?PB########B?B###G?GB5ja###B########BB##B######5
 #       .5#B#######B##Y7!77!!7!B########5B##BP55GG&PYB#BB########PP##BB#P##&~
-#      ~GBB#######PB#Y77!777!?JG########B##BB#PB&@@BJPBB#GB####B#B5G#BB#G##B
-#     ?GB########GB#Y777!7777B#B#########BPGP7YPGG##YJP#P?####B&&&B5#BBGB#&J
+#      ~GBB#######PB#Y77!777!?JG########B##BB#PB&@@BjaBB#GB####B#B5G#BB#G##B
+#     ?GB########GB#Y777!7777B#B#########BPGP7YPGG##Yja#P?####B&&&B5#BBGB#&J
 #   :5B########BB##J777!7777?&&B#######B5!!JJ~.^#G7?BYG5!5####&&&&@YBBGG###:
 #  ~B########BPB#B?7777!77777&&G####P##BP#J?7?!J@@@#GPY!?B##5Y!?P7PP5GGG##B
 #:5#########PJG#G77777777777!Y&G####5G#5&@G555B@@@@##&GJB#&5Y?^B@P^7?BBG##5
@@ -553,7 +553,7 @@ if __name__ == "__main__":
 #######BJ77YPP?777777777777!7777##J!5G55J&&&&&&&&&&&&&&&&&&&&&&&5YG##PJ##B
 ######5777?G5?777777777777!!777!B#?7~BP###&&&&&&&&&&&&&&&&&&&#GJ?7B##?J##P
 ####G?7777GG?7777777!777?JJYJ777GB77~PY5#&&&&&&&&&&&&&&&&&@&#5777?##B.7#&J
-##BY77777JG?77777!77JPBB#@@@&#5?5B77!YY?J5B&&@&&&&&&&&&&&&BP#P!77Y#&Y .B&J
+##BY77777JG?77777!77jaBB#@@@&#5?5B77!YY?J5B&&@&&&&&&&&&&&&BP#P!77Y#&Y .B&J
 # P?777777YJ77!!?5G#&&@@@&&@@@@&BPG7!!YJJJJJYPB#&&@&&&&&#&&BY#G!77P#B!  7&Y
 # 77777777777!P#&@@&&&&&&&&&@@@@&#P7!7Y7?JJJJJJJY5GG5P&&&&&@#PG777BBP:   7B
 # 77777777!7!#@&&&&&&&&&&&&&@@@@&&P7!7J!JJJJJJJJJJY5P#@&&&&&#PP77J#75     ^~

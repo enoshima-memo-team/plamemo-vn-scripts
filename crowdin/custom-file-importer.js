@@ -21,52 +21,51 @@
 
 const contentObj = JSON.parse(content);
 const forcedTargetLanguages = [
-  {id: 'en'},
-  {id: 'ja'},
-  {id: 'es-ES'},
+    { id: 'en' },
+    { id: 'ja' },
+    { id: 'es-ES' },
 ];
 
 for (const scene of Object.values(contentObj['texts'])) {
-  for (const textId in scene) {
+    for (const textId in scene) {
 
-    const item = scene[textId];
-    const stringObj = {
-      identifier: textId,
-      text: item.text,
-      context: item.context,
-      labels: item.labels,
-      isHidden: item.isHidden || false,
+        const item = scene[textId];
+        const stringObj = {
+            identifier: textId,
+            text: item.text,
+            context: item.context,
+            labels: item.labels,
+            isHidden: item.isHidden || false,
 
-      // Max 4k of custom data
-      customData: item.customData
-    };
-
-
-    // If importing translations
-    let contexTranslations = {}
-    if (forcedTargetLanguages.length > 0) {
-
-      stringObj.translations = {};
-      for (const lang of forcedTargetLanguages) {
-
-        // Continue if target translation doesn't exist
-        if (!Object.keys(item.translations).includes(lang.id)) {
-          continue;
-        }
-
-        const translation = item.translations[lang.id];
-        stringObj.translations[lang.id] = {
-          text: translation.text,
-          // status: translation.status || 'untranslated' // Default status
+            // Max 4k of custom data
+            customData: item.customData
         };
 
-        contexTranslations[lang.id] = stringObj.translations[lang.id];
-      }
+        // If importing translations
+        let contexTranslations = {};
+        if (forcedTargetLanguages.length > 0) {
+
+            stringObj.translations = {};
+            for (const lang of forcedTargetLanguages) {
+
+                // Continue if target translation doesn't exist
+                if (!Object.keys(item.translations).includes(lang.id)) {
+                    continue;
+                }
+
+                const translation = item.translations[lang.id];
+                stringObj.translations[lang.id] = {
+                    text: translation.text,
+                    // status: translation.status || 'untranslated' // Default status
+                };
+
+                contexTranslations[lang.id] = stringObj.translations[lang.id];
+            }
+        }
+
+        contexTranslations['item'] = item;
+        stringObj['context'] = JSON.stringify(contexTranslations);
+
+        strings.push(stringObj);
     }
-
-    contexTranslations['item'] = item;
-    stringObj['context'] = JSON.stringify(contexTranslations);
-
-    strings.push(stringObj);
-  }
 }
