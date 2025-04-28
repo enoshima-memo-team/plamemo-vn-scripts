@@ -38,10 +38,10 @@ for (const scene of Object.values(contentObj['texts'])) {
 
 
     // If importing translations
-    if (targetLanguages.length > 0) {
+    if (ourTargetLanguages.length > 0) {
 
       stringObj.translations = {};
-      for (const lang of targetLanguages) {
+      for (const lang of ourTargetLanguages) {
 
         // Continue if target translation doesn't exist
         if (!Object.keys(item.translations).includes(lang.id)) {
