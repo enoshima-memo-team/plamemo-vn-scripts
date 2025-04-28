@@ -21,6 +21,27 @@ This repo is inspired by [Python Project Boilerplate](https://github.com/keathmi
 
 See [Contributing](#contributing) section for instructions on how to install the project locally.
 
+#### With User Interface
+
+- Run the .exe file:
+```	Bash
+.\json-exporter.exe```
+
+- Or run the python script directly:
+```	Bash
+python json-exporter.py```
+
+#### As CLI
+
+- Use the .exe:
+```	Bash
+.\json-exporter.exe --input-folder-en <your_english_input_folder> --input-folder-ja <your_japanese_input_folder> --output-folder <your_desired_output_folder>
+```
+
+- Or run the python script directly:
+```	Bash
+python json-exporter.py --input-folder-en <your_english_input_folder> --input-folder-ja <your_japanese_input_folder> --output-folder <your_desired_output_folder>
+```
 
 ## Contributing
 
