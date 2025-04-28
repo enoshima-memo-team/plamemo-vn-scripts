@@ -20,6 +20,11 @@
  */
 
 const contentObj = JSON.parse(content);
+const forcedTargetLanguages = [
+  {id: 'en'},
+  {id: 'ja'},
+  {id: 'es-ES'},
+];
 
 for (const scene of Object.values(contentObj['texts'])) {
   for (const textId in scene) {
@@ -38,22 +43,29 @@ for (const scene of Object.values(contentObj['texts'])) {
 
 
     // If importing translations
-    if (targetLanguages.length > 0) {
+    let contexTranslations = {}
+    if (forcedTargetLanguages.length > 0) {
 
       stringObj.translations = {};
-      for (const lang of targetLanguages) {
+      for (const lang of forcedTargetLanguages) {
 
         // Continue if target translation doesn't exist
         if (!Object.keys(item.translations).includes(lang.id)) {
           continue;
         }
 
+        const translation = item.translations[lang.id];
         stringObj.translations[lang.id] = {
-          text: item.text,
-          status: item.status || 'untranslated' // Default status
+          text: translation.text,
+          // status: translation.status || 'untranslated' // Default status
         };
+
+        contexTranslations[lang.id] = stringObj.translations[lang.id];
       }
     }
+
+    contexTranslations['item'] = item;
+    stringObj['context'] = JSON.stringify(contexTranslations);
 
     strings.push(stringObj);
   }

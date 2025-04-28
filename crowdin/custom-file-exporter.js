@@ -20,9 +20,6 @@
  */
 
 
-// Enable when debugging
-// fileContent['strings'] = strings;
-
 // Get the original source file
 let fileContent = JSON.parse(content);
 
@@ -53,7 +50,7 @@ for (const stringObj of strings) {
       context: stringObj.context || '',
       customData: stringObj.customData || '',
       isHidden: stringObj.isHidden || false,
-      labels: stringObj.labels || [],
+      labels: stringObj.labels.reverse() || [],
     }
   }
 
@@ -77,6 +74,9 @@ for (const stringObj of strings) {
     }
   }
 }
+
+// Enable when debugging
+fileContent['strings'] = strings;
 
 // Overwrite content with the translated content
 content = JSON.stringify(fileContent, null, 2);
