@@ -108,7 +108,7 @@ def output_folder_selector() -> str:
     root = tk.Tk()
     root.withdraw()  # Hide the root window
     folder_path = filedialog.askdirectory(
-        title="Select the folder to save output files"
+        title="Select the folder to save OUTPUT files"
     )
     return folder_path
 
@@ -346,67 +346,73 @@ def extract_translations(data: dict, simplified=False) -> dict:
     return extracted_translations
 
 
-def translations_merger(translations_en: dict, translations_jp: dict) -> dict:
+def translations_merger(
+    translations_en: dict | None, translations_jp: dict | None
+) -> dict:
     """
     Merges Japanese translations into the English translations.
     Adds an empty Spanish translation with status 'untranslated'.
+    If Japanese or English translation doesn't exist fully or partially, leaves that space blank.
     """
-    for scene_label, scene_texts in translations_en["texts"].items():
-        for identifier, text_data in scene_texts.items():
-            try:
-                # Try to add Japanese translation. So get both translations.
-                jp_text = (
-                    translations_jp["texts"]
-                    .get(scene_label, {})
-                    .get(identifier, {})
-                    .get("text", "")
-                )
-                en_text = (
-                    translations_en["texts"]
-                    .get(scene_label, {})
-                    .get(identifier, {})
-                    .get("text", "")
-                )
+    # Initialize the merged translations with an empty structure
+    merged_translations = {"texts": {}}
 
-                # Add japanese source
-                text_data["translations"][JAPANESE_TAG] = {
-                    "text": jp_text,
-                    "status": "approved",
-                }
-                # And the english translation
-                text_data["translations"][ENGLISH_TAG] = {
-                    "text": en_text,
-                    "status": "approved",
-                }
-                # Add empty Spanish translation
-                text_data["translations"][SPANISH_TAG] = {
-                    "text": "",
-                    "status": "untranslated",
-                }
-                # Add Japanese context
-                text_data["context"] = "Original Text: " + jp_text
-            except:
-                # If there's no Japanese translation (because it's original content, for example), add a message to the context
-                text_data["translations"][JAPANESE_TAG] = {
-                    "text": "(Original content of the english version, there's no japanese source).",
-                    "status": "approved",
-                }
-                # And the english version
-                text_data["translations"][ENGLISH_TAG] = {
-                    "text": en_text,
-                    "status": "approved",
-                }
-                # Add empty Spanish translation
-                text_data["translations"][SPANISH_TAG] = {
-                    "text": "",
-                    "status": "untranslated",
-                }
-                # Add Japanese context saying there's no source
-                text_data["context"] = (
-                    "Original content of the english version, there's no japanese source."
-                )
+    # Get the scenes from both translations, defaulting to empty dicts if missing
+    scenes_en = translations_en.get("texts", {}) if translations_en else {}
+    scenes_jp = translations_jp.get("texts", {}) if translations_jp else {}
 
-    return translations_en
+    # Combine all scene labels from both translations
+    all_scene_labels = set(scenes_en.keys()) | set(scenes_jp.keys())
+
+    for scene_label in all_scene_labels:
+        # Get texts for the current scene from both translations
+        scene_texts_en = scenes_en.get(scene_label, {})
+        scene_texts_jp = scenes_jp.get(scene_label, {})
+
+        # Initialize the merged scene
+        merged_scene = {}
+
+        # Combine all identifiers (keys) from both translations
+        all_identifiers = set(scene_texts_en.keys()) | set(scene_texts_jp.keys())
+
+        for identifier in all_identifiers:
+            # Get text data for the current identifier from both translations
+            text_data_en = scene_texts_en.get(identifier, {})
+            text_data_jp = scene_texts_jp.get(identifier, {})
+
+            # Extract the English and Japanese texts (default to empty strings if missing)
+            en_text = text_data_en.get("text", "(No English source available)")
+            jp_text = text_data_jp.get("text", "(No Japanese source available)")
+
+            # Merge the translations
+            merged_scene[identifier] = {
+                "text": en_text,  # Use English text as the base
+                "translations": {
+                    JAPANESE_TAG: {
+                        "text": jp_text,
+                        "status": "approved" if jp_text else "untranslated",
+                    },
+                    ENGLISH_TAG: {
+                        "text": en_text,
+                        "status": "approved" if en_text else "untranslated",
+                    },
+                    SPANISH_TAG: {
+                        "text": "",
+                        "status": "untranslated",
+                    },
+                },
+                # Add context if Japanese text exists, otherwise provide a default message
+                "context": (
+                    f"Original Text: {jp_text}"
+                    if jp_text
+                    else "No Japanese source available, probably it's original content."
+                ),
+            }
+
+        # Add the merged scene to the merged translations
+        merged_translations["texts"][scene_label] = merged_scene
+
+    return merged_translations
 
 
 # ================================ MAIN ======================================
@@ -421,8 +427,6 @@ def main() -> Optional[dict]:
         if not input_folder_path_en:
             raise Exception("You need to select a folder for English files.")
 
-        print(input_folder_path_en)
-
         input_folder_path_jp = input_folder_selector("japanese")
         if not input_folder_path_jp:
             raise Exception("You need to select a folder for Japanese files.")
@@ -436,25 +440,38 @@ def main() -> Optional[dict]:
             raise SceneMismatchError("No matching files found in the selected folders.")
 
         for file_pair in file_pairs:
-            input_file_path_en = file_pair.get("english")
-            input_file_path_jp = file_pair.get("japanese")
+            input_file_path_en = file_pair.get(ENGLISH_TAG)
+            input_file_path_jp = file_pair.get(JAPANESE_TAG)
 
             # Generate output file name
             output_file_name = os.path.basename(
                 input_file_path_en or input_file_path_jp
-            ).replace(".json", "_crowdin.json")
+            ).replace(".txt.scn.m.json", "_crowdin.json")
             output_file_path = os.path.join(output_folder_path, output_file_name)
 
             simplified = False
 
-            # Load and process data
-            data_en = load_data(input_file_path_en) if input_file_path_en else {}
-            data_jp = load_data(input_file_path_jp) if input_file_path_jp else {}
-            extracted_translations_en = extract_translations(data_en, simplified)
-            extracted_translations_jp = extract_translations(data_jp, simplified)
-            extracted_translations_merged = translations_merger(
-                extracted_translations_en, extracted_translations_jp
-            )
+            # Load and process data depending on the existing files and data
+            if input_file_path_en and input_file_path_jp:
+                data_en = load_data(input_file_path_en) if input_file_path_en else {}
+                data_jp = load_data(input_file_path_jp) if input_file_path_jp else {}
+                extracted_translations_en = extract_translations(data_en, simplified)
+                extracted_translations_jp = extract_translations(data_jp, simplified)
+                extracted_translations_merged = translations_merger(
+                    extracted_translations_en, extracted_translations_jp
+                )
+            elif not input_file_path_en:  # EN file doesn't exist
+                data_jp = load_data(input_file_path_jp) if input_file_path_jp else {}
+                extracted_translations_jp = extract_translations(data_jp, simplified)
+                extracted_translations_merged = translations_merger(
+                    None, extracted_translations_jp
+                )
+            elif not input_file_path_jp:  # JP file doesn't exist
+                data_en = load_data(input_file_path_en) if input_file_path_en else {}
+                extracted_translations_en = extract_translations(data_en, simplified)
+                extracted_translations_merged = translations_merger(
+                    extracted_translations_en, None
+                )
 
             # Save merged translations
             save_extracted_translations(extracted_translations_merged, output_file_path)
