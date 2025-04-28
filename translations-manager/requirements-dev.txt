@@ -1,0 +1,4 @@
+-r requirements.txt
+black==25.1.0
+pre-commit==4.1.0
+pyinstaller==6.12.0
