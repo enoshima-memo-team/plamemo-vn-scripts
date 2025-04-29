@@ -20,7 +20,7 @@
  */
 
 const contentObj = JSON.parse(content);
-const forcedTargetLanguages = [
+const ourTargetLanguages = [
     { id: 'en' },
     { id: 'ja' },
     { id: 'es-ES' },
@@ -41,31 +41,42 @@ for (const scene of Object.values(contentObj['texts'])) {
             customData: item.customData
         };
 
+        let contextTranslations = {};
+        
         // If importing translations
-        let contexTranslations = {};
-        if (forcedTargetLanguages.length > 0) {
+        if (ourTargetLanguages.length > 0) {
 
             stringObj.translations = {};
-            for (const lang of forcedTargetLanguages) {
+
+            for (const lang of ourTargetLanguages) {
 
                 // Continue if target translation doesn't exist
+                
                 if (!Object.keys(item.translations).includes(lang.id)) {
                     continue;
                 }
+                
 
-                const translation = item.translations[lang.id];
+                //const translation = item.translations[lang.id];
                 stringObj.translations[lang.id] = {
-                    text: translation.text,
-                    // status: translation.status || 'untranslated' // Default status
+                    //status: translation.status || 'untranslated' // Default status
+                    //text: translation.text,
+                    text: item.translations[lang.id].text,
+                    status: item.translations[lang.id].status
                 };
 
-                contexTranslations[lang.id] = stringObj.translations[lang.id];
+                //contextTranslations[lang.id] = stringObj.translations[lang.id];
             }
         }
 
-        contexTranslations['item'] = item;
-        stringObj['context'] = JSON.stringify(contexTranslations);
+        //contextTranslations['item'] = item;
 
+        contextTranslations['strings'] = strings; //--
+        
+        stringObj['context'] = JSON.stringify(contextTranslations); // --
+        
         strings.push(stringObj);
+        
+
     }
 }

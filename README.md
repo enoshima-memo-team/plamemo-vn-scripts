@@ -25,11 +25,13 @@ See [Contributing](#contributing) section for instructions on how to install the
 
 - Run the .exe file:
 ```	Bash
-.\json-exporter.exe```
+.\json-exporter.exe
+```
 
 - Or run the python script directly:
 ```	Bash
-python json-exporter.py```
+python json-exporter.py
+```
 
 #### As CLI
 
