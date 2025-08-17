@@ -19,53 +19,110 @@
  * - targetLanguages: An array of objects containing details about each target language.
  */
 
-const contentObj = JSON.parse(content);
+/**
+ * Forced languages are required when Crowdin doesn't send
+ * the `targetLanguages` array when uploading the generated
+ * .json files
+ */
+const useForcedLanguages = true;
 const forcedTargetLanguages = [
-    { id: 'en' },
-    { id: 'ja' },
-    { id: 'es-ES' },
+  {id: 'en'},
+  {id: 'ja'},
+  {id: 'es-ES'},
 ];
 
-for (const scene of Object.values(contentObj['texts'])) {
-    for (const textId in scene) {
+/**
+ * For adding the whole string data in the
+ * 'context' field of each string
+ */
+const enableDebugContext = false;
 
-        const item = scene[textId];
-        const stringObj = {
-            identifier: textId,
-            text: item.text,
-            context: item.context,
-            labels: item.labels,
-            isHidden: item.isHidden || false,
 
-            // Max 4k of custom data
-            customData: item.customData
-        };
+/**
+ * Build the data for a string to be translated in Crowdin
+ *
+ * Set `enableDebugContext` as true if you want to set the whole
+ * string data in its `context` field
+ *
+ * @returns   Data for the string with the expected Crowdin fields
+ */
+const buidlstringObjData = function(item, itemId) {
+  const stringObj = {
+    identifier: itemId,
+    text: item.text,
+    labels: item.labels,
+    isHidden: item.isHidden || false,
 
-        // If importing translations
-        let contexTranslations = {};
-        if (forcedTargetLanguages.length > 0) {
+    // Context, normally original lang context
+    context: item.context,
 
-            stringObj.translations = {};
-            for (const lang of forcedTargetLanguages) {
+    // Max 4k of custom data
+    customData: item.customData,
 
-                // Continue if target translation doesn't exist
-                if (!Object.keys(item.translations).includes(lang.id)) {
-                    continue;
-                }
+    // Translations per lang
+    translations: {}
+  };
 
-                const translation = item.translations[lang.id];
-                stringObj.translations[lang.id] = {
-                    text: translation.text,
-                    // status: translation.status || 'untranslated' // Default status
-                };
 
-                contexTranslations[lang.id] = stringObj.translations[lang.id];
-            }
-        }
+  // If importing translations
+  const languages = (!useForcedLanguages ? targetLanguages : forcedTargetLanguages) || [];
 
-        contexTranslations['item'] = item;
-        stringObj['context'] = JSON.stringify(contexTranslations);
+  // Error if no languages set
+  if (languages.length === 0) {
+    throw new Error('Error: languages list is empty');
+  }
 
-        strings.push(stringObj);
+  // Add translations
+  let contexTranslations = {};
+  if (languages.length > 0) {
+
+    stringObj.translations = {};
+    for (const lang of languages) {
+
+      // Continue if target translation doesn't exist
+      if (!Object.keys(item.translations).includes(lang.id)) {
+        continue;
+      }
+
+      const translation = item.translations[lang.id];
+      stringObj.translations[lang.id] = {
+        text: translation.text,
+        status: translation.status || 'untranslated' // Default status
+      };
+
+      contexTranslations[lang.id] = stringObj.translations[lang.id];
     }
+  }
+
+  // Indirectly debug sending data to "context" entry
+  if (enableDebugContext) {
+    // replace the context with only translations and original item
+    contexTranslations['item'] = item;
+    stringObj['context'] = JSON.stringify(contexTranslations);
+
+    // ... or add the whole string data to the context
+    // stringObj['context'] = JSON.stringify({
+    //   ...stringObj
+    //   ...contexTranslations
+    // });
+  }
+
+  return stringObj;
+}
+
+
+// Get the uploaded source file
+const contentObj = JSON.parse(content);
+
+try {
+  // Build the string lists
+  for (const texts of Object.values(contentObj['texts'])) {
+    for (const textId in texts) {
+      strings.push(buidlstringObjData(texts[textId], textId));
+    }
+  }
+
+} catch (e) {
+  // Set error variable for Crowdin
+  error = e.message || 'Error: error processing strings';
 }

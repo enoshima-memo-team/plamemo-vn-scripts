@@ -20,63 +20,75 @@
  */
 
 
-// Get the original source file
+/**
+ * Export the Crowdin string list as-is (e.g. as they are
+ * currently stored). Used for debugging purposes
+ */
+const exportAsIsStringList = false;
+
+
+// Get the original source file as base for the export file
 let fileContent = JSON.parse(content);
 
 // Then attach changes + translations
 for (const stringObj of strings) {
-    const textId = stringObj.identifier;
+  const textId = stringObj.identifier;
 
-    // Get scene label where the string belongs
-    // related label has the format: 'scene-label:xyz'
-    const scene_label = (
-        stringObj.labels.find(s => s.startsWith('scene-label')) || 'scene:none'
-    ).split(':')[1];
-    if (scene_label == 'none') {
-        error += `<br>Error: ${textId} doesn't have a 'scene-label' label`;
+  // Get scene label where the string belongs
+  // related label has the format: 'scene-label:xyz'
+  const scene_label = (
+    stringObj.labels.find(s => s.startsWith('scene-label')) || 'scene:none'
+  ).split(':')[1];
+  if (scene_label == 'none') {
+    error += `<br>Error: ${textId} doesn't have a 'scene-label' label`;
+  }
+
+  // The string should belong to the original file
+  if (!(fileContent['texts'][scene_label]
+      && fileContent['texts'][scene_label][textId]))
+  {
+    error += `<br>Error: ${textId} doesn't exist in the original source file`;
+    continue;
+  }
+
+  // Update common properties
+  fileContent['texts'][scene_label][textId] = {
+    ...fileContent['texts'][scene_label][textId],
+    ...{
+      text: stringObj.text,
+      context: stringObj.context || '',
+      customData: stringObj.customData || '',
+      isHidden: stringObj.isHidden || false,
+      labels: stringObj.labels.reverse() || [],
     }
+  }
 
-    // The string should belong to the original file
-    if (!(fileContent['texts'][scene_label] && fileContent['texts'][scene_label][textId])) {
-        error += `<br>Error: ${textId} doesn't exist in the original source file`;
-        continue;
-    }
+  // Check if new changes are valid
+  if (fileContent['texts'][scene_label][textId].labels.length === 0) {
+    error += `<br>Error: ${textId} doesn't have any labels`;
+  }
 
-    // Update common properties
-    fileContent['texts'][scene_label][textId] = {
-        ...fileContent['texts'][scene_label][textId],
-        ...{
-            text: stringObj.text,
-            context: stringObj.context || '',
-            customData: stringObj.customData || '',
-            isHidden: stringObj.isHidden || false,
-            labels: stringObj.labels.reverse() || [],
+  // Add translations if exists
+  if (stringObj.translations) {
+
+    for (const lang in stringObj.translations) {
+      if (stringObj.translations[lang]
+        && stringObj.translations[lang].text)
+      {
+        fileContent['texts'][scene_label][textId]['translations'][lang] = {
+          text: stringObj.translations[lang].text,
+          status: stringObj.translations[lang].status,
         }
+      }
     }
-
-    // Check if new changes are valid
-    if (fileContent['texts'][scene_label][textId].labels.length === 0) {
-        error += `<br>Error: ${textId} doesn't have any labels`;
-    }
-
-    // Add translations if exists
-    if (stringObj.translations) {
-
-        for (const lang in stringObj.translations) {
-            if (stringObj.translations[lang]
-                && stringObj.translations[lang].text)
-            {
-                fileContent['texts'][scene_label][textId]['translations'][lang] = {
-                    text: stringObj.translations[lang].text,
-                    status: stringObj.translations[lang].status,
-                }
-            }
-        }
-    }
+  }
 }
 
 // Enable when debugging
-fileContent['strings'] = strings;
+if (exportAsIsStringList) {
+  fileContent['strings'] = strings;
+}
 
 // Overwrite content with the translated content
+// Crowdin will generate a file to download with this content
 content = JSON.stringify(fileContent, null, 2);
