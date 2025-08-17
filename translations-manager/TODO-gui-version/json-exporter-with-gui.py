@@ -9,11 +9,11 @@
 
 # For any questions, visit https://github.com/enoshima-memo-team/plamemo-vn-scripts/blob/develop/README.md#contact-us
 
-# TODO: remove after Python < 3.9 is no longer used/supported
-from __future__ import annotations
-
 import re, json, os, argparse
 from typing import Optional
+
+import tkinter as tk
+from tkinter import filedialog, messagebox
 
 ENGLISH_TAG = "en"
 JAPANESE_TAG = "ja"
@@ -22,11 +22,96 @@ SPANISH_TAG = "es-ES"
 
 class SceneMismatchError(Exception):
     """Exception raised for mismatched scenes in input files."""
+
     pass
 
 
+# ============================== DEPRECATED =============================
+
+
+@DeprecationWarning
+def input_file_selector(language: str = None) -> str:
+    """
+    Opens a file dialog to select a file and returns the selected file path.
+    """
+    root = tk.Tk()
+    root.withdraw()  # Hide the root window
+    file_path = filedialog.askopenfilename(
+        title=(
+            f"Select the {language.upper()} JSON file"
+            if language
+            else "Select a JSON file"
+        ),
+        filetypes=(("JSON files", "*.json"), ("All files", "*.*")),
+    )
+    return file_path
+
+
+@DeprecationWarning
+def output_file_namer(
+    input_file_path_en: str, input_file_path_ja: str
+) -> Optional[str]:
+    """
+    Generates the output file name based on the input file names.
+    If the input files are from the same scene, in `'pm<scene_id>.txt.scn.m.json'` format, the output file name will be `'extracted<scene_id>.json'`.
+    - It can recognize if the input files are from different scenes to say ERROR.
+    - Otherwise, if the input files don't match the filename format, it will open a file dialog to save the file with a custom title.
+    """
+    pattern = r"pm(\d{2}_\d{2})\.txt\.scn\.m\.json"
+    match_en = re.search(pattern, input_file_path_en)
+    match_ja = re.search(pattern, input_file_path_ja)
+
+    if match_en and match_ja:
+        if match_en.group(1) == match_ja.group(1):
+            default_filename = f"extracted{match_en.group(1)}.json"
+        else:
+            raise SceneMismatchError("The selected files are from different scenes.")
+    elif match_en:
+        default_filename = f"extracted{match_en.group(1)}.json"
+    elif match_ja:
+        default_filename = f"extracted{match_ja.group(1)}.json"
+    else:
+        default_filename = "extracted.json"
+
+    return filedialog.asksaveasfilename(
+        title="Save file as",
+        defaultextension=".json",
+        initialfile=default_filename,
+        filetypes=(("JSON files", "*.json"), ("All files", "*.*")),
+    )
+
 
 # ============================== UTIL ====================================
+
+
+def input_folder_selector(language: str = None) -> str:
+    """
+    Opens a folder dialog to select a folder and returns the selected folder path.
+    """
+    root = tk.Tk()
+    root.withdraw()  # Hide the root window
+    folder_path = filedialog.askdirectory(
+        title=(
+            f"Select the folder containing {language.upper()} JSON files"
+            if language
+            else "Select a folder"
+        )
+    )
+    return folder_path
+
+
+def output_folder_selector() -> str:
+    """
+    Opens a folder dialog to select a folder for saving output files.
+    Returns the selected folder path.
+    """
+    root = tk.Tk()
+    root.withdraw()  # Hide the root window
+    folder_path = filedialog.askdirectory(
+        title="Select the folder to save OUTPUT files"
+    )
+    return folder_path
+
 
 def get_file_pairs(folder_en: str, folder_ja: str) -> list[dict]:
     """
@@ -330,7 +415,6 @@ def translations_merger(
     return merged_translations
 
 
-
 # ================================ MAIN ======================================
 
 
@@ -341,15 +425,21 @@ def main(
     Main function that executes the loading, extraction, and saving of translations.
     """
     try:
-        # Verify all required folder are provided
+        # If folders are not provided via CLI, use folder selectors
         if not input_folder_path_en:
-            raise Exception("English files folder missing. Please provide a folder.")
+            input_folder_path_en = input_folder_selector("english")
+            if not input_folder_path_en:
+                raise Exception("You need to select a folder for English files.")
 
         if not input_folder_path_ja:
-            raise Exception("Japanese files folder missing. Please provide a folder.")
+            input_folder_path_ja = input_folder_selector("japanese")
+            if not input_folder_path_ja:
+                raise Exception("You need to select a folder for Japanese files.")
 
         if not output_folder_path:
-            raise Exception("Output files folder missing. Please provide a folder.")
+            output_folder_path = output_folder_selector()
+            if not output_folder_path:
+                raise Exception("You need to select a folder for saving output files.")
 
         # Get file pairs
         file_pairs = get_file_pairs(input_folder_path_en, input_folder_path_ja)
@@ -396,16 +486,19 @@ def main(
                 extracted_translations_merged, output_file_path_full
             )
 
-        print(f"\nTranslations extracted successfully for all matched files.")
+        messagebox.showinfo(
+            "Success",
+            f"Translations extracted successfully for all matched files.",
+        )
         return None
 
     except SceneMismatchError as e:
-        print(f"SceneMismatchError: {e}")
-        exit(1)
+        messagebox.showerror("Error", str(e))
+        return None
 
     except Exception as e:
-        print(f"Error: {e}")
-        exit(1)
+        messagebox.showerror("Error", str(e))
+        return None
 
 
 if __name__ == "__main__":
