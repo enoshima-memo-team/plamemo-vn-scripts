@@ -9,6 +9,9 @@
 
 # For any questions, visit https://github.com/enoshima-memo-team/plamemo-vn-scripts/blob/develop/README.md#contact-us
 
+# TODO: remove after Python < 3.9 is no longer used/supported
+from __future__ import annotations
+
 import re, json, os, argparse
 from typing import Optional
 
