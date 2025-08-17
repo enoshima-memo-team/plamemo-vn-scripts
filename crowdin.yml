@@ -1,0 +1,19 @@
+project_id: "732337" # plastic-memories-vn
+# api_token: XYZ    # token should be put in $HOME/.crowdin.yml
+
+base_path: "."
+base_url: "https://api.crowdin.com"
+
+preserve_hierarchy: true
+
+files:
+  - source: "translations-manager/es/*.txt_crowdin.json"
+    dest: "%original_file_name%"
+    translation: "translations-manager/es/%original_file_name%"
+    scheme: crowndefined
+    crowdin_format: custom_multilingual
+    languages_mapping:
+      two_letters_code:
+        en: en
+        es-ES: es-ES
+        ja: ja
