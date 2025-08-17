@@ -2,17 +2,12 @@
 
 ## Description
 
-Plastic Memories set of tools and scripts, mostly in python, to help with the traduction of the visual novel.
+This repo is comprised of a set tools and scripts, mostly written in `Python`, to help with the translation of the [Plastic Memories Visual Novel](https://vndb.org/v19441).
 
 
 ## Support
 
 - python 3.8+
-
-
-## Inspiration
-
-This repo is inspired by [Python Project Boilerplate](https://github.com/keathmilligan/python-boilerplate)
 
 
 ## Installation and usage
@@ -21,28 +16,15 @@ This repo is inspired by [Python Project Boilerplate](https://github.com/keathmi
 
 See [Contributing](#contributing) section for instructions on how to install the project locally.
 
-#### With User Interface
+#### JSON exporter [alpha-version]
 
-- Run the .exe file:
-```	Bash
-.\json-exporter.exe
-```
+Exports and merge the game texts to a more parseable JSON that can be imported to traslations tools (like [Crowdin](https://crowdin.com/))
 
-- Or run the python script directly:
-```	Bash
-python json-exporter.py
-```
-
-#### As CLI
-
-- Use the .exe:
-```	Bash
-.\json-exporter.exe --input-folder-en <your_english_input_folder> --input-folder-ja <your_japanese_input_folder> --output-folder <your_desired_output_folder>
-```
-
-- Or run the python script directly:
-```	Bash
-python json-exporter.py --input-folder-en <your_english_input_folder> --input-folder-ja <your_japanese_input_folder> --output-folder <your_desired_output_folder>
+```	bash
+python json-exporter.py \
+  --input-folder-en <path_to_en_folder> \
+  --input-folder-ja <path_to_jap_folder> \
+  --output-folder <path_to_output_folder>
 ```
 
 ## Contributing
@@ -63,7 +45,7 @@ pip install -r requirements-dev.txt     # if you want to contribute to the proje
 deactivate
 ```
 
-> We are working on a better way to install and run the tools, like a .exe installer or similar, maybe in the [Releases](https://github.com/enoshima-memo-team/plamemo-vn-scripts/releases) section. For now, you can use the above commands to install and run the tools locally. 
+> We are working on a better way to install and run the tools, like using executables files or. Maybe we'll be putting some builds in the [Releases](https://github.com/enoshima-memo-team/plamemo-vn-scripts/releases) section. For now, you can use the above commands to install and run the tools locally.
 
 > If you need to download python or git, you can find them here:
 > - [Python](https://www.python.org/downloads/)
@@ -73,4 +55,4 @@ deactivate
 
 For any questions or help, you can:
 - Open an issue [here](https://github.com/enoshima-memo-team/plamemo-vn-scripts/issues)
-- Contact us on our [Discord server](https://discord.gg/Tz9maCVMWQ)
+- Contact us on our [Discord server](https://discord.gg/B4nxw5JjJd)
